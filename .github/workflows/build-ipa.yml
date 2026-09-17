@@ -1,0 +1,38 @@
+name: Build Pocket Clock IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - 'PocketClock/**'
+      - 'PocketClock.xcodeproj/**'
+      - 'scripts/**'
+      - '.github/workflows/build-ipa.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pocket-clock-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Keep this project on the free public-repository runner path.
+    if: github.event.repository.private == false
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show build tools
+        run: xcodebuild -version
+      - name: Build and package for sideloading
+        run: bash scripts/build-ipa.sh
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: PocketClock-IPA
+          path: build/PocketClock.ipa
+          if-no-files-found: error
+          retention-days: 14
